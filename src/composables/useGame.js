@@ -29,10 +29,10 @@ export function useGame() {
   const canHunt = computed(() => tools.value > 0)
   const huntSuccessRate = computed(() => 0.3 + tools.value * 0.15)
 
-  function addLog(message, type = 'info') {
+  function addLog(message, type = 'info', keyNode = false) {
     const timestamp = new Date().toLocaleTimeString()
-    actionLog.value.unshift({ message, type, timestamp })
-    if (actionLog.value.length > 20) {
+    actionLog.value.unshift({ message, type, timestamp, keyNode })
+    if (actionLog.value.length > 50) {
       actionLog.value.pop()
     }
   }
@@ -42,7 +42,7 @@ export function useGame() {
       gameOver.value = true
       gameOverReason.value = '体温过低，你在严寒中失去了意识...'
       stopTimers()
-      addLog('游戏结束：体温过低！', 'danger')
+      addLog('游戏结束：体温过低！', 'danger', true)
     }
     if (temperature.value >= 100) {
       temperature.value = 100
@@ -70,7 +70,7 @@ export function useGame() {
   }
 
   function startNightCycle() {
-    addLog(`夜幕降临，第 ${dayCount.value} 天结束`, 'info')
+    addLog(`夜幕降临，第 ${dayCount.value} 天结束`, 'info', true)
     nightConsumptionTimer = setInterval(() => {
       consumeHeat()
     }, 1000)
@@ -82,7 +82,7 @@ export function useGame() {
 
   function startDayCycle() {
     dayCount.value++
-    addLog(`天亮了，第 ${dayCount.value} 天开始`, 'success')
+    addLog(`天亮了，第 ${dayCount.value} 天开始`, 'success', true)
     isBlizzard.value = false
     if (nightConsumptionTimer) {
       clearInterval(nightConsumptionTimer)
@@ -101,7 +101,7 @@ export function useGame() {
 
   function triggerBlizzard() {
     isBlizzard.value = true
-    addLog('⚠️ 暴风雪来袭！所有消耗加倍！', 'danger')
+    addLog('⚠️ 暴风雪来袭！所有消耗加倍！', 'danger', true)
   }
 
   function chopWood() {
@@ -136,7 +136,7 @@ export function useGame() {
       const hideGained = Math.floor(Math.random() * 2) + 1
       food.value += foodGained
       hide.value += hideGained
-      addLog(`狩猎成功：获得 ${foodGained} 食物，${hideGained} 兽皮，消耗 ${tempCost} 体温`, 'success')
+      addLog(`狩猎成功：获得 ${foodGained} 食物，${hideGained} 兽皮，消耗 ${tempCost} 体温`, 'success', true)
     } else {
       addLog(`狩猎失败：消耗 ${tempCost} 体温，空手而归`, 'warning')
     }
@@ -163,7 +163,7 @@ export function useGame() {
     tools.value += 1
     temperature.value = Math.max(0, temperature.value - tempCost)
     
-    addLog(`制作工具：获得 1 工具，消耗 ${tempCost} 体温`, 'success')
+    addLog(`制作工具：获得 1 工具，消耗 ${tempCost} 体温`, 'success', true)
     checkGameOver()
   }
 
@@ -230,10 +230,11 @@ export function useGame() {
       isDay: isDay.value,
       dayCount: dayCount.value,
       isBlizzard: isBlizzard.value,
+      actionLog: actionLog.value,
       savedAt: Date.now()
     }
     localStorage.setItem(`snowSurvival_${slot}`, JSON.stringify(gameState))
-    addLog(`游戏已保存到存档位：${slot === 'auto' ? '自动存档' : slot}`, 'info')
+    addLog(`游戏已保存到存档位：${slot === 'auto' ? '自动存档' : slot}`, 'info', true)
   }
 
   function loadGame(slot = 'auto') {
@@ -256,7 +257,7 @@ export function useGame() {
       isBlizzard.value = gameState.isBlizzard
       gameOver.value = false
       gameOverReason.value = ''
-      actionLog.value = []
+      actionLog.value = gameState.actionLog || []
       
       stopTimers()
       startTimers()
@@ -265,10 +266,10 @@ export function useGame() {
         startNightCycle()
       }
       
-      addLog(`成功加载存档：${slot === 'auto' ? '自动存档' : slot}`, 'success')
+      addLog(`成功加载存档：${slot === 'auto' ? '自动存档' : slot}`, 'success', true)
       return true
     } catch (e) {
-      addLog('存档损坏，无法加载', 'danger')
+      addLog('存档损坏，无法加载', 'danger', true)
       return false
     }
   }
@@ -314,12 +315,12 @@ export function useGame() {
     stopTimers()
     startTimers()
     
-    addLog('新游戏开始！祝你好运！', 'success')
+    addLog('新游戏开始！祝你好运！', 'success', true)
   }
 
   onMounted(() => {
     startTimers()
-    addLog('欢迎来到雪地生存！白天收集资源，夜晚保持温暖。', 'info')
+    addLog('欢迎来到雪地生存！白天收集资源，夜晚保持温暖。', 'info', true)
   })
 
   onUnmounted(() => {
